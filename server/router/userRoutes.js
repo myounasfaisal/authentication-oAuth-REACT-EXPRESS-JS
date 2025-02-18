@@ -4,6 +4,6 @@ import { loginUser, registerUser } from "../controllers/userControllers.js";
 const router = Router();
 
 router.route("/auth/login").post(loginUser);
-router.post("/auth/register", registerUser);// ✅ Fix applied here
+router.post("/auth/signup", registerUser);
 
 export default router;

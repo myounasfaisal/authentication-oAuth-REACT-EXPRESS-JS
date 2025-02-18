@@ -144,8 +144,29 @@ res.status(200).json(new apiResponse("User Logged In Successfully",200,loggedInU
 
 })
 
+const logoutUser=asyncWrapper(async (req,res)=>{
+try {
+    const{user}=req;
+    if(!user){
+        throw new apiErrors(401,"User not found in the Request");
+    }
+   const loggedUser=await User.findById(user._id);
+   if(!loggedUser){
+    throw new apiErrors(404,"User Not Found");
+   } 
+
+} catch (error) {
+    console.error("Error :: ",error);
+    res.status(error?.statusCode || 500).json({
+        message:error.message || "Internal Server Error"
+    });
+}
+
+
+})
 
 export {
 registerUser,
-loginUser
+loginUser,
+logoutUser
 }
