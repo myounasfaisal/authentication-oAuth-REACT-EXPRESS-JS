@@ -24,10 +24,10 @@ function Login() {
 
         console.log("Form Data Submitted:", formData);
 
-          const response=  await login(formData);
-          setUser(response);
+          const data=  await login(formData);
+          setUser(data);
 
-        console.log(response);
+        console.log(data);
 
         navigate("/")
     

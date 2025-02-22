@@ -4,11 +4,13 @@ import Form from '../components/Form/Form';
 import Input from '../components/Input/Input';
 import Button from '../components/Button/Button';
 import { signup } from '../api/auth/auth';
+import { useAuth } from '../Context/Auth/AuthContextProvider';
+import { useNavigate } from 'react-router-dom';
 
 function Signup() {
-    
-    
-    async function handleSubmit(formData) {
+  const navigate=useNavigate();
+  const {setUser}=useAuth()
+  async function handleSubmit(formData) {
     const { name, password, email } = formData;
 
     if (!name.trim() || !password.trim() || !email.trim()) {
@@ -16,10 +18,16 @@ function Signup() {
       return;
     }
 
-    const {data}=await signup(formData);
 
-    if(data){
-       await login(data);
+
+    const { data } = await signup(formData);
+
+
+    if (data) {
+
+      setUser(data);
+
+      navigate("/")
     }
 
   }
