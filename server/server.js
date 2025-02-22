@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-dotenv.config(); // Load environment variables at the start
+dotenv.config(); 
 
 import app from "./app.js";
 
