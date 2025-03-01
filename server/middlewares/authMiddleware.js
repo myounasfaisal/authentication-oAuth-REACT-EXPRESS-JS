@@ -27,7 +27,7 @@ export const validateTokens = asyncWrapper(async (req, _, next) => {
 
     
 
-    const user = await User.findById(decodedToken._id);
+    const user = await User.findById(decodedToken._id).select("-refreshTokens");
     if (!user) {
       console.error("❌ User Not Found in Database");
       throw new apiErrors("User not found", 404);

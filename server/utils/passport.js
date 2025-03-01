@@ -19,7 +19,9 @@ passport.use(
       try {
         console.log("Google strategy configured");
         // Check if the user already exists in your database
-        let user = await User.findOne({ googleId: profile.id });
+        let user = await User.findOne({ email: profile.emails[0].value }).select("-password");
+
+      
 
         if (!user) {
           // Create a new user if they don't exist

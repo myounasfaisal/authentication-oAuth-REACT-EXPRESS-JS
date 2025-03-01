@@ -101,7 +101,7 @@ class UserServiceClass {
             throw new apiErrors(401, "Google Authentication Failed");
         }
 
-        let existingUser = await User.findOne({ email: user.email });
+        let existingUser = await User.findOne({ email: user.email }).select("-password");
         if (!existingUser) {
             const password = this.generatePassword(user.id, user.name);
             existingUser = await User.create({
