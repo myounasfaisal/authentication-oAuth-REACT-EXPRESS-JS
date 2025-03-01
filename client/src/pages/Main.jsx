@@ -6,6 +6,8 @@ function Main() {
 
     const {user}=useAuth();
 
+    console.log("auth:",user);
+
 
   return (
     <Container>

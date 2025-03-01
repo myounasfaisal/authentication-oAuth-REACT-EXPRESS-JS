@@ -1,121 +1,97 @@
 import { apiErrors } from "../utils/apiError.js";
 import { User } from "../models/user.model.js";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 class UserServiceClass {
+    // Generate password for OAuth users
+    generatePassword(googleId, name) {
+        const numbers = googleId.slice(0, 4);
+        const letters = name.replace(/\s+/g, '').slice(0, 4);
+        return (numbers + letters).padEnd(8, "X");
+    }
+
     // Token generator
-    tokenGenerator = async (user) => {
+    async tokenGenerator(user) {
         if (!user) {
             throw new apiErrors(404, "Token Generation :: User Does Not Exist");
         }
 
         const accessToken = jwt.sign(
-            {
-                _id: user._id,
-                email: user.email,
-                name: user.name,
-            },
+            { _id: user._id, email: user.email, name: user.name },
             process.env.ACCESS_SECRET,
             { expiresIn: process.env.ACCESS_SECRET_EXPIRY || "15m" }
         );
 
         const refreshToken = jwt.sign(
-            {
-                _id: user._id,
-            },
+            { _id: user._id },
             process.env.REFRESH_SECRET,
             { expiresIn: process.env.REFRESH_SECRET_EXPIRY || "7d" }
         );
 
         return { accessToken, refreshToken };
-    };
+    }
 
     // Register user
     async registerUser(name, email, password) {
-        if (!name) {
-            throw new apiErrors(400, "Name Missing");
+        if (!name || !email || !password) {
+            throw new apiErrors(400, "Missing Required Fields");
         }
 
-        if (!email) {
-            throw new apiErrors(400, "Email Missing");
-        }
-
-        if (!password) {
-            throw new apiErrors(400, "Password Missing");
-        }
-
-        let newUser = await User.findOne({ email });
-        if (newUser) {
+        let user = await User.findOne({ email });
+        if (user) {
             throw new apiErrors(409, "User Already Exists");
         }
 
-        newUser = await User.create({ name, email, password });
-        if (!newUser) {
+        user = await User.create({ name, email, password });
+        if (!user) {
             throw new apiErrors(424, "Failed To Create New User");
         }
 
-        const { accessToken, refreshToken } = await this.tokenGenerator(newUser);
-        newUser.refreshTokens.push(refreshToken);
-        await newUser.save();
-        const { password: _, ...userWithoutPassword } = newUser.toObject();
-        newUser = {...userWithoutPassword,accessToken};
-        return { newUser, accessToken, refreshToken };
+        const { accessToken, refreshToken } = await this.tokenGenerator(user);
+        user.refreshTokens.push(refreshToken);
+        await user.save();
+
+        const { password: _, ...userWithoutPassword } = user.toObject();
+        return { newUser: { ...userWithoutPassword, accessToken }, accessToken, refreshToken };
     }
 
     // Login user
     async loginUser(email, password) {
-        // Validate input
-        if (!email) {
-            throw new apiErrors(400, "Login :: Email is required");
+        if (!email || !password) {
+            throw new apiErrors(400, "Missing Email or Password");
         }
-    
-        if (!password) {
-            throw new apiErrors(400, "Login :: Password is required");
-        }
-    
-        // Find the user by email
+
         const user = await User.findOne({ email });
         if (!user) {
-            throw new apiErrors(404, "Login :: User Does Not Exist");
+            throw new apiErrors(404, "User Does Not Exist");
         }
-    
-        // Check if the password is valid
+
         const isPasswordValid = await user.comparePassword(password);
         if (!isPasswordValid) {
             throw new apiErrors(401, "Invalid Password");
         }
-    
-        // Generate tokens
-        const { accessToken, refreshToken } = await this.tokenGenerator(user);
-    
-        // Manage refreshTokens array (limit to 5 tokens)
-        if (user.refreshTokens.length >= 5) {
-            user.refreshTokens.shift(); // Remove the oldest token
-        }
-        user.refreshTokens.push(refreshToken); // Add the new token
-        await user.save(); // Save the updated user document
 
-        // Remove the password field from the user object
+        const { accessToken, refreshToken } = await this.tokenGenerator(user);
+        if (user.refreshTokens.length >= 5) {
+            user.refreshTokens.shift();
+        }
+        user.refreshTokens.push(refreshToken);
+        await user.save();
+
         const { password: _, refreshTokens, ...userWithoutPassword } = user.toObject();
-        // Return the user object without the password and only the most recent refreshToken
-        return {
-            user: { ...userWithoutPassword, refreshToken,accessToken },
-            accessToken,
-            refreshToken,
-        };
+        return { user: { ...userWithoutPassword, accessToken }, accessToken, refreshToken };
     }
 
     // Logout user
     async logoutUser(userId) {
         const user = await User.findById(userId);
         if (!user) {
-            throw new apiErrors(404, "Logout :: User Not Found");
+            throw new apiErrors(404, "User Not Found");
         }
 
-        // Clear refreshTokens array
         user.refreshTokens = [];
         await user.save();
-
         return user;
     }
 
@@ -125,23 +101,55 @@ class UserServiceClass {
             throw new apiErrors(401, "Google Authentication Failed");
         }
 
-        let existingUser = await User.findOne({ googleId: user._id });
+        let existingUser = await User.findOne({ email: user.email });
         if (!existingUser) {
+            const password = this.generatePassword(user.id, user.name);
             existingUser = await User.create({
                 name: user.displayName,
-                email: user.emails[0].value,
-                googleId: user.id,
+                email: user.email,
+                password,
             });
         }
 
         const { accessToken, refreshToken } = await this.tokenGenerator(existingUser);
+        if (existingUser.refreshTokens.length >= 5) {
+            existingUser.refreshTokens.shift();
+        }
         existingUser.refreshTokens.push(refreshToken);
         await existingUser.save();
 
-        return { existingUser, accessToken, refreshToken };
+        const { password: _, refreshTokens, ...userWithoutPassword } = existingUser.toObject();
+        return { existingUser: userWithoutPassword, accessToken, refreshToken };
     }
-    async 
+
+//Github Login
+async githubLogin(user){
+    if (!user) {
+        throw new apiErrors(401, "Github Authentication Failed");
+    }
+
+    let existingUser = await User.findOne({ username: user.username });
+    if (!existingUser) {
+        const password = this.generatePassword(user.id, user.name);
+        existingUser = await User.create({
+            name: user.displayName,
+            username: user.username,
+            password,
+        });
+    }
+
+    const { accessToken, refreshToken } = await this.tokenGenerator(existingUser);
+    if (existingUser.refreshTokens.length >= 5) {
+        existingUser.refreshTokens.shift();
+    }
+    existingUser.refreshTokens.push(refreshToken);
+    await existingUser.save();
+
+    const { password: _, refreshTokens, ...userWithoutPassword } = existingUser.toObject();
+    return { existingUser: userWithoutPassword, accessToken, refreshToken };
 }
+}
+
 
 const UserService = new UserServiceClass();
 export default UserService;

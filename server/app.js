@@ -3,7 +3,8 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./DB/DB.js";
 import dotenv from "dotenv"
-
+import "./utils/passport.js";
+import passport from "passport";
 dotenv.config();
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(cors({
     origin: ['http://localhost:5173']
 }));
 app.use(cookieParser());
+app.use(passport.initialize());
 
 connectDB();
 

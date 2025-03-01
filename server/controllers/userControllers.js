@@ -1,6 +1,7 @@
 import { asyncWrapper } from "../utils/asyncWrapper.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import UserService from "../services/user.service.js";
+import { apiErrors } from "../utils/apiError.js";
 
 // Register user
 const registerUser = asyncWrapper(async (req, res) => {
@@ -120,32 +121,28 @@ const googleCallback = asyncWrapper(async (req, res) => {
   try {
     const { user } = req;
 
-    // Call the service to handle Google login
+    if (!user) {
+      throw new Error("Google authentication failed. No user found.");
+    }
+
     const { existingUser, accessToken, refreshToken } = await UserService.googleLogin(user);
 
     // Set cookies
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Set to false in development
-      sameSite: "none", // Required for cross-origin cookies
-      maxAge: 15 * 60 * 1000, // 15 minute
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Set to false in development
-      sameSite: "none", // Required for cross-origin cookies
-      maxAge: 15 * 60 * 1000, // 15 minute
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // Send response
-    res.status(200).json(
-      new apiResponse("User Logged In with Google Successfully", 200, {
-        accessToken,
-        refreshToken,
-        user: existingUser,
-      })
-    );
+    res.redirect(`http://localhost:5173/api/v1/users/auth/google/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&name=${encodeURIComponent(user.name)}`);
   } catch (error) {
     console.error("Error :: ", error);
     res.status(error?.statusCode || 500).json({
@@ -154,4 +151,62 @@ const googleCallback = asyncWrapper(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, googleCallback };
+const githubCallback = asyncWrapper(async (req, res) => {
+  try {
+    const { user } = req;
+
+    if (!user) {
+      throw new Error("Github authentication failed. No user found.");
+    }
+
+    const { existingUser, accessToken, refreshToken } = await UserService.googleLogin(user);
+
+    // Set cookies
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.redirect(`http://localhost:5173/api/v1/users/auth/github/callback?accessToken=${accessToken}&refreshToken=${refreshToken}&name=${encodeURIComponent(user.name)}`);
+  } catch (error) {
+    console.error("Error :: ", error);
+    res.status(error?.statusCode || 500).json({
+      message: error.message || "Internal Server Error",
+    });
+  }
+});
+
+const getUserWithAccessToken=asyncWrapper(async (req,res)=>{
+try {
+  
+  const{user}=req;
+
+
+  if(!user){
+    throw new apiErrors(404,"User Not Found In request");
+  }
+
+  res.status(200).json(new apiResponse("User Fetched Successfully", 200, user));
+
+} catch (error) {
+
+  console.error("Error :: ", error);
+  res.status(error?.statusCode || 500).json({
+    message: error.message || "Internal Server Error",
+  
+  });
+}
+
+})
+
+
+export { registerUser, loginUser, logoutUser, googleCallback,githubCallback,getUserWithAccessToken };

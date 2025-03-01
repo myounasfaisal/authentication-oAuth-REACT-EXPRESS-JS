@@ -7,6 +7,8 @@ import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import AuthContextProvider from "./Context/Auth/AuthContextProvider.jsx";
 import Main from "./pages/Main.jsx";
+import GoogleCallBack from "./pages/GoogleCallBack.jsx";
+import GithubCallBack from "./pages/GithubCallBack.jsx";
 
 const router = createBrowserRouter([
   {
@@ -24,7 +26,14 @@ const router = createBrowserRouter([
       {
         path: "/signup",
         element: <Signup />,
+      },{
+        path:"/api/v1/users/auth/google/callback",
+        element:<GoogleCallBack/>
       },
+      {
+      path:"/api/v1/users/auth/github/callback",
+      element:<GithubCallBack/>
+    }
     ],
   },
 ]);

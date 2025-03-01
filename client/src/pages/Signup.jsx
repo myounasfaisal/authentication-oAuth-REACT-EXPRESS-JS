@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useEffect} from 'react';
 import Container from '../components/Container/Container';
 import Form from '../components/Form/Form';
 import Input from '../components/Input/Input';
@@ -8,8 +8,14 @@ import { useAuth } from '../Context/Auth/AuthContextProvider';
 import { useNavigate } from 'react-router-dom';
 
 function Signup() {
-  const navigate=useNavigate();
-  const {setUser}=useAuth()
+  const navigate = useNavigate();
+  const { setUser,user } = useAuth();
+  useEffect(()=>{
+    if(user){
+      navigate("/");
+    }
+  },[])
+  
   async function handleSubmit(formData) {
     const { name, password, email } = formData;
 
@@ -17,12 +23,7 @@ function Signup() {
       console.log("Credentials Missing: Please fill in all fields.");
       return;
     }
-
-
-
     const { data } = await signup(formData);
-
-
     if (data) {
 
       setUser(data);
@@ -31,6 +32,16 @@ function Signup() {
     }
 
   }
+
+  const handleGoogleButton = (e) => {
+    e.preventDefault();
+    window.location.href = "http://localhost:3000/api/v1/users/auth/google";
+  };
+
+  const handleGitHubButton = (e) => {
+    e.preventDefault();
+    window.location.href = "http://localhost:3000/api/v1/users/auth/github";
+  };
 
   return (
     <Container>
@@ -66,6 +77,12 @@ function Signup() {
         <Button type="submit">
           Sign Up
         </Button>
+        <br />
+        <div className='flex w-full justify-center items-center gap-4 flex-wrap'>
+        <Button onClick={handleGoogleButton}>Sign Up With Google</Button>
+        
+        <Button onClick={handleGitHubButton} style={{backgroundColor:'black',color:"white"}}>Sign Up With GitHub</Button>
+        </div>
       </Form>
     </Container>
   );

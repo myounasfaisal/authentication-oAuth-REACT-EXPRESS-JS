@@ -4,10 +4,6 @@ import { Outlet } from 'react-router-dom'
 import { useAuth } from './Context/Auth/AuthContextProvider';
 
 function App() {
-  
-  const {user}=useAuth();
-
-  console.log(user);
 
   return (
     <>
