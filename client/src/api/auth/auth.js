@@ -70,7 +70,7 @@ export const signup = async (credentials) => {
 };
 
 export const fetchUserWithAccessToken=async (accessToken,refreshToken)=>{
-  if(!refreshToken || !accessToken || !setUser){
+  if(!refreshToken || !accessToken ){
     console.error("Token is Missing");
   }
   try {

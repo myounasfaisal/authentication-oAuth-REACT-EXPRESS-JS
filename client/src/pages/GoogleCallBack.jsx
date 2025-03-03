@@ -25,7 +25,7 @@ function GoogleCallBack() {
                 return;
             }
 
-           const userData=  await fetchUserWithAccessToken()
+           const userData=  await fetchUserWithAccessToken(accessToken,refreshToken)
              if(userData){ 
              setUser(userData);
                navigate("/");

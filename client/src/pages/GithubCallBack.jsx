@@ -1,7 +1,7 @@
 import { useEffect,useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../Context/Auth/AuthContextProvider";
-
+import { fetchUserWithAccessToken } from "../api/auth/auth";
 function GithubCallBack() {
     const location = useLocation();
        const navigate = useNavigate();
@@ -24,7 +24,7 @@ function GithubCallBack() {
                    return;
                }
    
-             const userData=  await fetchUserWithAccessToken()
+             const userData=  await fetchUserWithAccessToken(accessToken,refreshToken);
              if(userData){ 
              setUser(userData);
                navigate("/");
