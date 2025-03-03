@@ -69,6 +69,42 @@ export const signup = async (credentials) => {
   }
 };
 
+export const fetchUserWithAccessToken=async (accessToken,refreshToken)=>{
+  if(!refreshToken || !accessToken || !setUser){
+    console.error("Token is Missing");
+  }
+  try {
+    const response = await fetch("http://localhost:3000/api/v1/users/auth/getinfo", {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+        },
+        credentials: "include", // Required if using cookies
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch user info");
+    }
+
+    const userData = await response.json();
+    console.log("User Info:", userData);
+
+    // Store tokens only after successful authentication
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+
+    
+
+    console.log("login successful!", { accessToken, refreshToken});
+    return (userData.data);
+
+} catch (error) {
+    console.error("Error fetching user info:", error);
+    navigate("/login"); // Redirect to login if authentication fails
+}
+}
+
 export const logout = () => {
   localStorage.removeItem("token");
 };

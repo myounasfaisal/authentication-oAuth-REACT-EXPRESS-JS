@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../Context/Auth/AuthContextProvider";
+import { fetchUserWithAccessToken } from "../api/auth/auth";
 
 function GoogleCallBack() {
     const location = useLocation();
@@ -16,7 +17,7 @@ function GoogleCallBack() {
             const searchParams = new URLSearchParams(location.search);
             const accessToken = searchParams.get("accessToken");
             const refreshToken = searchParams.get("refreshToken");
-            const name = searchParams.get("name");
+
 
             if (!accessToken || !refreshToken) {
                 console.error("Google authentication failed");
@@ -24,39 +25,18 @@ function GoogleCallBack() {
                 return;
             }
 
-            try {
-                const response = await fetch("http://localhost:3000/api/v1/users/auth/getinfo", {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `Bearer ${accessToken}`,
-                        "Content-Type": "application/json",
-                    },
-                    credentials: "include", // Required if using cookies
-                });
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch user info");
-                }
-
-                const userData = await response.json();
-                console.log("User Info:", userData);
-
-                // Store tokens only after successful authentication
-                localStorage.setItem("accessToken", accessToken);
-                localStorage.setItem("refreshToken", refreshToken);
-
-                setUser(userData.data);
-
-                console.log("Google login successful!", { accessToken, refreshToken, name });
-                navigate("/");
-
-            } catch (error) {
-                console.error("Error fetching user info:", error);
-                navigate("/login"); // Redirect to login if authentication fails
-            }
+           const userData=  await fetchUserWithAccessToken()
+             if(userData){ 
+             setUser(userData);
+               navigate("/");
+             }
+             else{
+                console.error("Error while logging the User");
+                navigate("/login")
+             }
         };
 
-        authenticateUser();
+     authenticateUser();
     }, [location, navigate, setUser]);
 
     return (
