@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import connectDB from "./DB/DB.js";
 import dotenv from "dotenv"
 import "./utils/passport.js";
+import swaggerDocs from "./swagger.js";
 import passport from "passport";
 dotenv.config();
 
@@ -23,5 +24,6 @@ import userRouter from "./router/userRoutes.js";
 
 app.use("/api/v1/users", userRouter);
 
+swaggerDocs(app);
 
 export default app;
